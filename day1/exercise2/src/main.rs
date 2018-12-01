@@ -4,9 +4,19 @@ use std::io::BufReader;
 use std::io::prelude::*;
 use std::iter::Iterator;
 use std::vec::Vec;
+use std::collections::HashSet;
 
-fn last_or_zero(vec: &Vec<i32>) -> i32 {
-    return vec.iter().last().unwrap_or(&0).clone();
+fn find_reccuring_frequencies(numbers: &Vec<i32>) -> i32 {
+    let mut frequencies: HashSet<i32> = HashSet::new();
+    let mut current_frequence: i32 = 0;
+    loop {
+        for number in numbers.iter() {
+            current_frequence += number;
+            if !frequencies.insert(current_frequence) {
+                return current_frequence
+            }
+        }
+    }
 }
 
 fn main() {
@@ -16,21 +26,5 @@ fn main() {
 
      let numbers: Vec<i32> = reader.lines().map(|line| line.expect("Could not parse number").parse::<i32>().unwrap()).collect();
 
-    let mut freq_at_stage: Vec<i32> = Vec::new();
-    let mut result: Option<i32> = None;
-    while result.is_none() {
-        for number in numbers.iter() {
-            let last_freq: i32 = last_or_zero(&freq_at_stage);
-            let next_freq = last_freq + number;
-            let does_contain = freq_at_stage.iter().position(|&i| i == next_freq);
-            if does_contain.is_some() {
-                result = Some(next_freq);
-                break;
-            } else {
-                freq_at_stage.push(next_freq);
-            }
-        }
-    }
-
-     println!("{}", result.expect("Could not find any repetitions"));
+     println!("{}", find_reccuring_frequencies(&numbers));
 }
