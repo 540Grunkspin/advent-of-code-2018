@@ -1,0 +1,6 @@
+[package]
+name = "exercise2"
+version = "0.1.0"
+authors = ["Anton Holmberg <anton.holmberg@greenely.se>"]
+
+[dependencies]
