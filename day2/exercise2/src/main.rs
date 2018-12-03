@@ -2,8 +2,6 @@ use std::env::args;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::collections::HashSet;
-use std::convert::From;
 use std::option::Option;
 
 fn get_input_data() -> Vec<String> {
@@ -11,27 +9,21 @@ fn get_input_data() -> Vec<String> {
     let file = File::open(file_path).expect("Could not open file");
     let reader = BufReader::new(file);
 
-    return reader.lines().map(|line| line.expect("Could not read line")).collect();
+    return reader
+        .lines()
+        .map(|line| line.expect("Could not read line"))
+        .collect();
 }
 
 fn get_matches(current_id: &String, all_ids: &Vec<String>) -> Option<String> {
     for id in all_ids {
-        let mut diff_count = 0;
-        let mut same = String::new();
+        let mut character_pairs = current_id.chars().zip(id.chars());
+        let same: String = character_pairs
+            .filter(|(x, y)| x == y)
+            .map(|(x, _)| x)
+            .collect();
 
-        let mut current_iter = current_id.chars();
-        let mut id_iter = id.chars();
-        let mut current_next = current_iter.next();
-        let mut id_next = id_iter.next();
-        while current_next.is_some() && id_next.is_some() {
-            if current_next.unwrap() != id_next.unwrap() { diff_count += 1 }
-            else { same.push(current_next.unwrap().clone()) }
-
-            current_next = current_iter.next();
-            id_next = id_iter.next();
-        }
-
-        if diff_count <= 1 {
+        if current_id.len() - same.len() == 1 {
             return Some(same);
         }
     }
@@ -40,17 +32,18 @@ fn get_matches(current_id: &String, all_ids: &Vec<String>) -> Option<String> {
 }
 
 fn find_first_match(sets: &mut Vec<String>) -> Option<String> {
-    let mut current_set = sets.pop();
-    while current_set.is_some() {
-        let found_match = get_matches(&current_set.unwrap(), sets);
+    loop {
+        let found_match = match sets.pop() {
+            Some(set) => get_matches(&set, sets),
+            None => break,
+        };
+
         if found_match.is_some() {
             return found_match;
-        } else {
-            current_set = sets.pop();
         }
-    } 
+    }
 
-    return None
+    return None;
 }
 
 fn main() {
