@@ -148,6 +148,24 @@ impl Schedule {
         return (max_guard, max);
     }
 
+    fn find_most_consistent_sleep_guard(&self) -> (u16, i32) {
+        let mut max = 0;
+        let mut max_guard = 0;
+        let mut max_freq_index = 0;
+
+        for (&guard, values) in &self.minutes_asleep_by_guard {
+            for (index, &freq) in values.iter().enumerate() {
+                if freq > max {
+                    max = freq;
+                    max_guard = guard;
+                    max_freq_index = index;
+                }
+            }
+        }
+
+        return (max_guard, max_freq_index as i32);
+    }
+
     fn find_sleepiest_minute_by_guard(&self, guard: u16) -> i32 {
         let mut max = 0;
         let mut max_index = 0;
@@ -178,7 +196,10 @@ fn main() {
     let (sleepiest_guard, _) = schedule.find_sleepiest_guard();
     let sleepiest_minute = schedule.find_sleepiest_minute_by_guard(sleepiest_guard);
 
-    println!("{}", sleepiest_guard as i32 * sleepiest_minute);
+    let (most_frequent_guard, highest_frequence_minute) = schedule.find_most_consistent_sleep_guard();
+
+    println!("By sleep minutes {}", sleepiest_guard as i32 * sleepiest_minute);
+    println!("By sleep frequency {}", most_frequent_guard as i32 * highest_frequence_minute);
 }
 
 #[cfg(test)]
