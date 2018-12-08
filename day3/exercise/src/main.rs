@@ -1,4 +1,5 @@
 extern crate regex;
+#[macro_use] extern crate lazy_static;
 
 use regex::Regex;
 use std::env::args;
@@ -77,7 +78,9 @@ impl FabricSheet {
 
 impl From<String> for Claim {
     fn from(input: String) -> Claim {
-        let pattern = Regex::new(r"#(\d*?)\s+@\s+(\d*),(\d*):\s+(\d*)x(\d*)").unwrap();
+        lazy_static! {
+            static ref pattern: Regex = Regex::new(r"#(\d*?)\s+@\s+(\d*),(\d*):\s+(\d*)x(\d*)").unwrap();
+        }
         let matches = pattern.captures_iter(&input).next().unwrap();
 
         let id = &matches[1].parse::<i32>().unwrap();
