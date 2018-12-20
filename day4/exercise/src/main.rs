@@ -12,7 +12,6 @@ use std::cmp::PartialOrd;
 use std::cmp::Ord;
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::mem;
 
 fn get_input_data() -> Vec<String> {
     let file_path = args().nth(1).expect("Input file path is required");
@@ -29,13 +28,23 @@ fn get_input_data() -> Vec<String> {
 enum GuardAction {
     WakeUp,
     FallAsleep,
-    StartShift
+    StartShift(u16),
 }
 
 impl From<String> for GuardAction {
     fn from(input: String) -> GuardAction {
-        return match input.as_str() {
-            "begins shift" => GuardAction::StartShift,
+        lazy_static! {
+            static ref matcher: Regex = Regex::new(r"(?:Guard #)?(\d*)\s*(.*)").unwrap();
+        }
+        let matched = matcher.captures_iter(&input).next().unwrap();
+
+        let guard = match matched[1].parse::<u16>() {
+            Ok(id) => Some(id),
+            Err(_) => None
+        };
+
+        return match &matched[2] {
+            "begins shift" => GuardAction::StartShift(guard.unwrap()),
             "falls asleep" => GuardAction::FallAsleep,
             "wakes up" => GuardAction::WakeUp,
             _ => panic!("Could not create GuardAction"),
@@ -47,29 +56,22 @@ impl From<String> for GuardAction {
 struct Record {
     date: DateTime<Utc>,
     action: GuardAction,
-    guard_id: Option<u16>,
 }
 
 impl From<String> for Record {
     fn from (input: String) -> Record {
         lazy_static! {
-            static ref matcher: Regex = Regex::new(r"\[(.*?)\]\s*(?:Guard #)?(\d*)\s*(.*)").unwrap();
+            static ref matcher: Regex = Regex::new(r"\[(.*?)\]\s*(.*)").unwrap();
         }
         let matched = matcher.captures_iter(&input).next().unwrap();
 
         let date = Utc.datetime_from_str(&matched[1], "%Y-%m-%d %H:%M").expect("Could not parse date");
 
-        let guard = match matched[2].parse::<u16>() {
-            Ok(id) => Some(id),
-            Err(_) => None
-        };
-
-        let action = GuardAction::from(matched[3].to_string());
+        let action = GuardAction::from(matched[2].to_string());
 
         return Record {
             date: date,
             action: action,
-            guard_id: guard
         };
     }
 }
@@ -104,9 +106,7 @@ impl Schedule {
 
         for record in records {
             match record.action {
-                GuardAction::StartShift => {
-                    let guard_id = record.guard_id.unwrap();
-
+                GuardAction::StartShift(guard_id) => {
                     if !minutes_asleep_by_guard.contains_key(&guard_id) {
                         minutes_asleep_by_guard.insert(guard_id, [0 ; 60]);
                     }
@@ -215,7 +215,6 @@ mod test {
         let expected = Record {
             date: Utc.ymd(1518, 9, 14).and_hms(0, 54, 0),
             action: GuardAction::WakeUp,
-            guard_id: None
         };
 
         assert_eq!(expected, result);
@@ -227,7 +226,6 @@ mod test {
         let expected = Record {
             date: Utc.ymd(1518, 9, 14).and_hms(0, 54, 0),
             action: GuardAction::FallAsleep,
-            guard_id: None
         };
 
         assert_eq!(expected, result);
@@ -238,8 +236,7 @@ mod test {
         let result = Record::from("[1518-04-15 23:58] Guard #373 begins shift".to_string());
         let expected = Record {
             date: Utc.ymd(1518, 4, 15).and_hms(23, 58, 0),
-            action: GuardAction::StartShift,
-            guard_id: Some(373)
+            action: GuardAction::StartShift(373),
         };
 
         assert_eq!(expected, result);
@@ -249,13 +246,11 @@ mod test {
     fn test_sort_record() {
         let first = Record {
             date: Utc.ymd(1518, 4, 15).and_hms(23, 58, 0),
-            action: GuardAction::StartShift,
-            guard_id: Some(373)
+            action: GuardAction::StartShift(373),
         };
         let second = Record {
             date: Utc.ymd(1518, 9, 14).and_hms(0, 54, 0),
             action: GuardAction::WakeUp,
-            guard_id: None
         };
 
         assert_eq!(second.cmp(&first), Ordering::Greater);
