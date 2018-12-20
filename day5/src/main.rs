@@ -29,15 +29,25 @@ fn exercise2() {
     let input = get_input_data();
     let chars = (97..=122).into_iter().map(|ascii| ascii as u8 as char);
 
-    let filtered = chars.map(|unit| filter_unit(unit, &input)).collect::<Vec<String>>();
+    let filtered = chars
+        .map(|unit| filter_unit(unit, &input))
+        .collect::<Vec<String>>();
 
-    let shortest = filtered.par_iter().map(filter_pairs).map(|s| s.len()).min().unwrap();
+    let shortest = filtered
+        .par_iter()
+        .map(filter_pairs)
+        .map(|s| s.len())
+        .min()
+        .unwrap();
 
     println!("Shortest is: {}", shortest);
 }
 
 fn filter_unit(unit: char, input: &String) -> String {
-    input.chars().filter(|&item| item != unit && item != upper_char(unit)).collect::<String>()
+    input
+        .chars()
+        .filter(|&item| item != unit && item != upper_char(unit))
+        .collect::<String>()
 }
 
 fn main() {
@@ -49,7 +59,7 @@ fn main() {
                 exercise2();
             }
         }
-        None => return
+        None => return,
     };
 }
 
@@ -57,20 +67,39 @@ fn filter_pairs(input: &String) -> String {
     let mut next_input = input.clone();
     loop {
         let pairs = make_pairs(&next_input);
-        let removal_index = pairs.iter().position(|&(x, y)| cancels_out(x, y));
-        match removal_index {
-            Some(i) => {
-                next_input = [&next_input[0..i], &next_input[i + 2..]].join("");
+        let filtered = pairs
+            .iter()
+            .map(|&(x, y)| (cancels_out(x, y), (x, y)))
+            .collect::<Vec<(bool, (char, char))>>();
+
+        let unmarked = filtered
+            .iter()
+            .filter(|(marked, (_, _))| !marked)
+            .collect::<Vec<_>>();
+
+        if unmarked.len() == pairs.len() {
+            break;
+        }
+
+        next_input = "".to_string();
+        let mut iter = filtered.iter();
+        while let Some((marked, (x, _))) = iter.next() {
+            if !*marked {
+                next_input.push(*x);
+            } else {
+                iter.next();
             }
-            None => break,
-        };
+        }
     }
 
     return next_input;
 }
 
 fn make_pairs(input: &String) -> Vec<(char, char)> {
-    let skipped = input.chars().skip(1).collect::<String>();
+    let mut skipped_input = input.clone();
+    skipped_input.push(' ');
+    let skipped = skipped_input.chars().skip(1).collect::<String>();
+
     input.chars().zip(skipped.chars()).collect()
 }
 
