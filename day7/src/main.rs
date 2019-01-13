@@ -1,4 +1,3 @@
-extern crate regex;
 
 mod graph;
 
