@@ -2,7 +2,7 @@ extern crate regex;
 
 use regex::Regex;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Step<'a> {
     pub target: &'a str,
     pub dependency: &'a str,

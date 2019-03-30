@@ -66,3 +66,53 @@ impl<'a> Graph<'a> {
       .unwrap()
   }
 }
+
+#[cfg(test)]
+mod test {
+  use super::step::Step;
+  use super::GraphBuilder;
+
+  #[test]
+  fn test_walk() {
+    let steps: Vec<Step> = vec![
+      Step {
+        target: "A",
+        dependency: "C",
+      },
+      Step {
+        target: "F",
+        dependency: "C",
+      },
+      Step {
+        target: "B",
+        dependency: "A",
+      },
+      Step {
+        target: "D",
+        dependency: "A",
+      },
+      Step {
+        target: "E",
+        dependency: "B",
+      },
+      Step {
+        target: "E",
+        dependency: "D",
+      },
+      Step {
+        target: "E",
+        dependency: "F",
+      },
+    ];
+
+    let mut builder = GraphBuilder::new();
+
+    for step in steps.iter() {
+      builder.add_step(step.clone());
+    }
+
+    let graph = builder.build();
+
+    assert_eq!(String::from("CABDFE"), graph.walk());
+  }
+}
