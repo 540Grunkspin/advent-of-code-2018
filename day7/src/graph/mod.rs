@@ -74,7 +74,7 @@ mod test {
 
   #[test]
   fn test_walk() {
-    let steps: Vec<Step> = vec![
+    let steps = vec![
       Step {
         target: "A",
         dependency: "C",
@@ -107,8 +107,8 @@ mod test {
 
     let mut builder = GraphBuilder::new();
 
-    for step in steps.iter() {
-      builder.add_step(step.clone());
+    for step in steps {
+      builder.add_step(step);
     }
 
     let graph = builder.build();
