@@ -1,19 +1,30 @@
 pub mod step;
+mod walker;
 
 use std::collections::BTreeMap;
 use std::collections::HashSet;
 
 use self::step::Step;
+use self::walker::SimpleWalker;
+use self::walker::Walker;
 
 pub struct GraphBuilder<'a> {
+  walker: Box<Walker<'a>>,
   nodes: BTreeMap<&'a str, HashSet<&'a str>>,
 }
 
 impl<'a> GraphBuilder<'a> {
   pub fn new() -> GraphBuilder<'a> {
+    let nodes = BTreeMap::new();
     GraphBuilder {
-      nodes: BTreeMap::new(),
+      nodes: nodes,
+      walker: Box::new(SimpleWalker::new()),
     }
+  }
+
+  pub fn with_walker(&mut self, walker: Box<Walker<'a>>) -> &mut GraphBuilder<'a> {
+    self.walker = walker;
+    self
   }
 
   pub fn add_step(&mut self, step: Step<'a>) -> &mut GraphBuilder<'a> {
@@ -29,17 +40,21 @@ impl<'a> GraphBuilder<'a> {
   }
 
   pub fn build(self) -> Graph<'a> {
-    Graph::new(self.nodes)
+    Graph::new(self.walker, self.nodes)
   }
 }
 
 pub struct Graph<'a> {
   nodes: BTreeMap<&'a str, HashSet<&'a str>>,
+  walker: Box<Walker<'a>>,
 }
 
 impl<'a> Graph<'a> {
-  fn new(nodes: BTreeMap<&'a str, HashSet<&'a str>>) -> Graph<'a> {
-    Graph { nodes: nodes }
+  fn new(walker: Box<Walker<'a>>, nodes: BTreeMap<&'a str, HashSet<&'a str>>) -> Graph<'a> {
+    Graph {
+      nodes: nodes,
+      walker: walker,
+    }
   }
 
   pub fn walk(&self) -> String {
@@ -48,22 +63,12 @@ impl<'a> Graph<'a> {
     let all_nodes = self.nodes.keys().map(|x| *x).collect::<HashSet<&'a str>>();
 
     while visited != all_nodes {
-      let next_target = self.get_next_target(&visited);
+      let next_target = self.walker.walk_to_next(&self.nodes, &visited);
       visited.insert(next_target);
       ordered_visited.push(next_target);
     }
 
     return ordered_visited.join("");
-  }
-
-  fn get_next_target(&self, visited: &HashSet<&'a str>) -> &'a str {
-    self
-      .nodes
-      .iter()
-      .filter(|&(key, val)| val.is_subset(&visited) && !visited.contains(key))
-      .map(|(key, _)| key)
-      .next()
-      .unwrap()
   }
 }
 
