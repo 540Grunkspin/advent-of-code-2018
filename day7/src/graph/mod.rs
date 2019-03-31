@@ -58,17 +58,17 @@ impl<'a> Graph<'a> {
   }
 
   pub fn walk(&self) -> String {
-    let mut visited: HashSet<&'a str> = HashSet::new();
-    let mut ordered_visited: Vec<&'a str> = Vec::new();
+    let mut completed_steps: HashSet<&'a str> = HashSet::new();
+    let mut visited: Vec<&'a str> = Vec::new();
     let all_nodes = self.nodes.keys().map(|x| *x).collect::<HashSet<&'a str>>();
 
-    while visited != all_nodes {
-      let next_target = self.walker.walk_to_next(&self.nodes, &visited);
-      visited.insert(next_target);
-      ordered_visited.push(next_target);
+    while completed_steps != all_nodes {
+      let next_target = self.walker.walk_to_next(&self.nodes, &mut completed_steps);
+      completed_steps.insert(next_target);
+      visited.push(next_target);
     }
 
-    return ordered_visited.join("");
+    return visited.join("");
   }
 }
 
