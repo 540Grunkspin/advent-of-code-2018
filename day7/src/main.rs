@@ -7,9 +7,11 @@ use std::env::args;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
+use std::iter::FromIterator;
 
 use self::graph::step::Step;
-use self::graph::GraphBuilder;
+use self::graph::Graph;
+use self::graph::GraphIterator;
 
 fn get_input_data() -> Vec<String> {
     let file_path = args().nth(1).expect("Input file path is required");
@@ -24,14 +26,12 @@ fn get_input_data() -> Vec<String> {
 
 fn main() {
     let lines = get_input_data();
-    let mut builder = GraphBuilder::new();
+    let mut graph = Graph::new();
 
     for line in lines.iter() {
         let step = Step::from(line.as_str());
-        builder.add_step(step);
+        graph.add_step(step);
     }
-
-    let graph = builder.build();
-
-    println!("{}", graph.walk());
+    
+    println!("{}", String::from_iter(GraphIterator::from(&graph)));
 }

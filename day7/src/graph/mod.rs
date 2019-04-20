@@ -1,124 +1,137 @@
-pub mod step;
+
 mod node;
-mod walker;
+pub mod step;
 
-use std::collections::BTreeMap;
-use std::collections::HashSet;
+use std::cell::RefCell;
+use std::collections::BTreeSet;
+use std::collections::HashMap;
+use std::rc::Rc;
 
+use self::node::Node;
+use self::node::NodeRef;
 use self::step::Step;
-use self::walker::SimpleWalker;
-use self::walker::Walker;
-
-pub struct GraphBuilder<'a> {
-  walker: Box<Walker<'a>>,
-  nodes: BTreeMap<&'a str, HashSet<&'a str>>,
+pub struct Graph {
+  nodes: HashMap<String, NodeRef>,
 }
 
-impl<'a> GraphBuilder<'a> {
-  pub fn new() -> GraphBuilder<'a> {
-    let nodes = BTreeMap::new();
-    GraphBuilder {
-      nodes: nodes,
-      walker: Box::new(SimpleWalker::new()),
+impl Graph {
+  pub fn new() -> Graph {
+    Graph {
+      nodes: HashMap::new(),
     }
   }
 
-  pub fn with_walker(&mut self, walker: Box<Walker<'a>>) -> &mut GraphBuilder<'a> {
-    self.walker = walker;
-    self
+  pub fn add_step(&mut self, step: Step) {
+    let target = self.get_or_insert(String::from(step.target));
+    let dependency = self.get_or_insert(String::from(step.dependency));
+
+    target.borrow().add_dependency(dependency);
   }
 
-  pub fn add_step(&mut self, step: Step<'a>) -> &mut GraphBuilder<'a> {
+  fn get_or_insert(&mut self, node_name: String) -> NodeRef {
     self
       .nodes
-      .entry(step.target)
-      .or_insert(HashSet::new())
-      .insert(step.dependency);
-
-    self.nodes.entry(step.dependency).or_insert(HashSet::new());
-
-    self
-  }
-
-  pub fn build(self) -> Graph<'a> {
-    Graph::new(self.walker, self.nodes)
+      .entry(node_name.clone())
+      .or_insert(Rc::new(RefCell::new(Node::new(node_name))).clone())
+      .clone()
   }
 }
 
-pub struct Graph<'a> {
-  nodes: BTreeMap<&'a str, HashSet<&'a str>>,
-  walker: Box<Walker<'a>>,
+pub struct GraphIterator {
+  candidates: BTreeSet<NodeRef>,
+  dependencies_met: BTreeSet<NodeRef>,
 }
 
-impl<'a> Graph<'a> {
-  fn new(walker: Box<Walker<'a>>, nodes: BTreeMap<&'a str, HashSet<&'a str>>) -> Graph<'a> {
-    Graph {
-      nodes: nodes,
-      walker: walker,
-    }
+impl Iterator for GraphIterator {
+  type Item = String;
+
+  fn next(&mut self) -> Option<String> {
+    let next = self.find_suitable_candidate()?;
+    self.candidates.remove(&next);
+    self.dependencies_met.insert(next.clone());
+
+    return Some(next.clone().borrow().name.clone());
   }
+}
 
-  pub fn walk(&self) -> String {
-    let mut completed_steps: HashSet<&'a str> = HashSet::new();
-    let mut visited: Vec<&'a str> = Vec::new();
-    let all_nodes = self.nodes.keys().map(|x| *x).collect::<HashSet<&'a str>>();
-
-    while completed_steps != all_nodes {
-      let next_target = self.walker.walk_to_next(&self.nodes, &mut completed_steps);
-      completed_steps.insert(next_target);
-      visited.push(next_target);
+impl GraphIterator {
+  fn find_suitable_candidate(&mut self) -> Option<NodeRef> {
+    for candidate in self.candidates.iter() {
+      let dependencies = candidate.borrow().dependencies.clone();
+      if dependencies.borrow().is_subset(&self.dependencies_met) {
+        return Some(candidate.clone());
+      }
     }
 
-    return visited.join("");
+    return None;
+  }
+}
+
+impl From<&Graph> for GraphIterator {
+  fn from(graph: &Graph) -> GraphIterator {
+    let candidates: BTreeSet<NodeRef> = graph.nodes.iter().map(|(_, node)| node.clone()).collect();
+
+    GraphIterator {
+      dependencies_met: BTreeSet::new(),
+      candidates: candidates,
+    }
   }
 }
 
 #[cfg(test)]
 mod test {
   use super::step::Step;
-  use super::GraphBuilder;
+  use super::Graph;
+
+  use super::GraphIterator;
+
+  use std::cell::RefCell;
+
+  use std::iter::FromIterator;
+  use std::rc::Rc;
+  use std::collections::BTreeSet;
 
   #[test]
   fn test_walk() {
     let steps = vec![
       Step {
-        target: "A",
-        dependency: "C",
+        target: String::from("A"),
+        dependency: String::from("C"),
       },
       Step {
-        target: "F",
-        dependency: "C",
+        target: String::from("F"),
+        dependency: String::from("C"),
       },
       Step {
-        target: "B",
-        dependency: "A",
+        target: String::from("B"),
+        dependency: String::from("A"),
       },
       Step {
-        target: "D",
-        dependency: "A",
+        target: String::from("D"),
+        dependency: String::from("A"),
       },
       Step {
-        target: "E",
-        dependency: "B",
+        target: String::from("E"),
+        dependency: String::from("B"),
       },
       Step {
-        target: "E",
-        dependency: "D",
+        target: String::from("E"),
+        dependency: String::from("D"),
       },
       Step {
-        target: "E",
-        dependency: "F",
+        target: String::from("E"),
+        dependency: String::from("F"),
       },
     ];
 
-    let mut builder = GraphBuilder::new();
+    let mut graph = Graph::new();
 
     for step in steps {
-      builder.add_step(step);
+      graph.add_step(step);
     }
 
-    let graph = builder.build();
+    let graph_iter = GraphIterator::from(&graph);
 
-    assert_eq!(String::from("CABDFE"), graph.walk());
+    assert_eq!(String::from("CABDFE"), String::from_iter(graph_iter));
   }
 }

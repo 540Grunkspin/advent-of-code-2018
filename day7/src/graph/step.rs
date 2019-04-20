@@ -3,22 +3,22 @@ extern crate regex;
 use regex::Regex;
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct Step<'a> {
-    pub target: &'a str,
-    pub dependency: &'a str,
+pub struct Step {
+    pub target: String,
+    pub dependency: String,
 }
 
-impl<'a> Step<'a> {
-    pub fn new(name: &'a str, dependency: &'a str) -> Step<'a> {
+impl Step {
+    pub fn new(name: &str, dependency: &str) -> Step {
         Step {
-            target: name,
-            dependency: dependency,
+            target: String::from(name),
+            dependency: String::from(dependency),
         }
     }
 }
 
-impl<'a> From<&'a str> for Step<'a> {
-    fn from(input: &'a str) -> Step<'a> {
+impl From<&str> for Step {
+    fn from(input: &str) -> Step {
         lazy_static! {
             static ref STEP_MATCHER: Regex =
                 Regex::new(r"^Step ([A-Z]) must be finished before step ([A-Z]) can begin.$")
@@ -44,8 +44,8 @@ mod test {
         assert_eq!(
             step,
             Step {
-                target: "T",
-                dependency: "G"
+                target: String::from("T"),
+                dependency: String::from("G")
             }
         );
     }
