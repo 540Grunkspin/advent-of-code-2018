@@ -56,7 +56,6 @@ impl From<&str> for Node {
 mod test {
 
   use std::collections::BTreeSet;
-  use std::iter::FromIterator;
   use std::cell::RefCell;
   use std::rc::Rc;
 

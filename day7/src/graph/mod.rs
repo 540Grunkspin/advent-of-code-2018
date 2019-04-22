@@ -85,11 +85,7 @@ mod test {
 
   use super::GraphIterator;
 
-  use std::cell::RefCell;
-
   use std::iter::FromIterator;
-  use std::rc::Rc;
-  use std::collections::BTreeSet;
 
   #[test]
   fn test_walk() {
