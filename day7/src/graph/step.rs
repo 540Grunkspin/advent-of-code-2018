@@ -3,21 +3,21 @@ extern crate regex;
 use regex::Regex;
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct Step {
-    pub target: String,
-    pub dependency: String,
+pub struct Step<'a> {
+    pub target: &'a str,
+    pub dependency: &'a str,
 }
 
-impl Step {
-    pub fn new(name: &str, dependency: &str) -> Step {
+impl<'a> Step<'a> {
+    pub fn new(name: &'a str, dependency: &'a str) -> Step<'a> {
         Step {
-            target: String::from(name),
-            dependency: String::from(dependency),
+            target: name,
+            dependency: dependency,
         }
     }
 }
 
-impl From<&str> for Step {
+impl<'a> From<&'a str> for Step<'a> {
     fn from(input: &str) -> Step {
         lazy_static! {
             static ref STEP_MATCHER: Regex =
@@ -44,8 +44,8 @@ mod test {
         assert_eq!(
             step,
             Step {
-                target: String::from("T"),
-                dependency: String::from("G")
+                target: "T",
+                dependency: "G"
             }
         );
     }

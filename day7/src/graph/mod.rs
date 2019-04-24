@@ -2,44 +2,41 @@
 mod node;
 pub mod step;
 
-use std::cell::RefCell;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use self::node::Node;
-use self::node::NodeRef;
 use self::step::Step;
-pub struct Graph {
-  nodes: HashMap<String, NodeRef>,
+pub struct Graph<'a> {
+  nodes: HashMap<&'a str, Node>,
 }
 
-impl Graph {
-  pub fn new() -> Graph {
+impl<'a> Graph<'a> {
+  pub fn new() -> Graph<'a> {
     Graph {
       nodes: HashMap::new(),
     }
   }
 
-  pub fn add_step(&mut self, step: Step) {
-    let target = self.get_or_insert(String::from(step.target));
-    let dependency = self.get_or_insert(String::from(step.dependency));
+  pub fn add_step(&mut self, step: Step<'a>) {
+    let target = self.get_or_insert(step.target);
+    let dependency = self.get_or_insert(step.dependency);
 
-    target.borrow().add_dependency(dependency);
+    target.add_dependency(dependency.clone());
   }
 
-  fn get_or_insert(&mut self, node_name: String) -> NodeRef {
+  fn get_or_insert(&mut self, node_name: &'a str) -> Node {
     self
       .nodes
-      .entry(node_name.clone())
-      .or_insert(Rc::new(RefCell::new(Node::new(node_name))).clone())
+      .entry(node_name)
+      .or_insert(Node::from(node_name))
       .clone()
   }
 }
 
 pub struct GraphIterator {
-  candidates: BTreeSet<NodeRef>,
-  dependencies_met: BTreeSet<NodeRef>,
+  candidates: BTreeSet<Node>,
+  dependencies_met: BTreeSet<Node>,
 }
 
 impl Iterator for GraphIterator {
@@ -50,15 +47,14 @@ impl Iterator for GraphIterator {
     self.candidates.remove(&next);
     self.dependencies_met.insert(next.clone());
 
-    return Some(next.clone().borrow().name.clone());
+    return Some(String::from(next.name()));
   }
 }
 
 impl GraphIterator {
-  fn find_suitable_candidate(&mut self) -> Option<NodeRef> {
+  fn find_suitable_candidate(&mut self) -> Option<Node> {
     for candidate in self.candidates.iter() {
-      let dependencies = candidate.borrow().dependencies.clone();
-      if dependencies.borrow().is_subset(&self.dependencies_met) {
+      if candidate.are_dependencies_satisfied(&self.dependencies_met) {
         return Some(candidate.clone());
       }
     }
@@ -67,9 +63,9 @@ impl GraphIterator {
   }
 }
 
-impl From<&Graph> for GraphIterator {
+impl<'a> From<&Graph<'a>> for GraphIterator {
   fn from(graph: &Graph) -> GraphIterator {
-    let candidates: BTreeSet<NodeRef> = graph.nodes.iter().map(|(_, node)| node.clone()).collect();
+    let candidates: BTreeSet<Node> = graph.nodes.iter().map(|(_, node)| node.clone()).collect();
 
     GraphIterator {
       dependencies_met: BTreeSet::new(),
@@ -91,32 +87,32 @@ mod test {
   fn test_walk() {
     let steps = vec![
       Step {
-        target: String::from("A"),
-        dependency: String::from("C"),
+        target: "A",
+        dependency: "C",
       },
       Step {
-        target: String::from("F"),
-        dependency: String::from("C"),
+        target: "F",
+        dependency: "C",
       },
       Step {
-        target: String::from("B"),
-        dependency: String::from("A"),
+        target: "B",
+        dependency: "A",
       },
       Step {
-        target: String::from("D"),
-        dependency: String::from("A"),
+        target: "D",
+        dependency: "A",
       },
       Step {
-        target: String::from("E"),
-        dependency: String::from("B"),
+        target: "E",
+        dependency: "B",
       },
       Step {
-        target: String::from("E"),
-        dependency: String::from("D"),
+        target: "E",
+        dependency: "D",
       },
       Step {
-        target: String::from("E"),
-        dependency: String::from("F"),
+        target: "E",
+        dependency: "F",
       },
     ];
 
