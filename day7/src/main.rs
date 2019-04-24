@@ -33,5 +33,5 @@ fn main() {
         graph.add_step(step);
     }
     
-    println!("{}", String::from_iter(GraphIterator::from(&graph)));
+    println!("Exercise one: {}", String::from_iter(GraphIterator::from(&graph)));
 }

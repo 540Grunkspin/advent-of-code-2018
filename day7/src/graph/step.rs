@@ -3,13 +3,13 @@ extern crate regex;
 use regex::Regex;
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct Step<'a> {
-    pub target: &'a str,
-    pub dependency: &'a str,
+pub struct Step {
+    pub target: char,
+    pub dependency: char,
 }
 
-impl<'a> Step<'a> {
-    pub fn new(name: &'a str, dependency: &'a str) -> Step<'a> {
+impl Step {
+    pub fn new(name: char, dependency: char) -> Step {
         Step {
             target: name,
             dependency: dependency,
@@ -17,7 +17,7 @@ impl<'a> Step<'a> {
     }
 }
 
-impl<'a> From<&'a str> for Step<'a> {
+impl From<&str> for Step {
     fn from(input: &str) -> Step {
         lazy_static! {
             static ref STEP_MATCHER: Regex =
@@ -28,8 +28,8 @@ impl<'a> From<&'a str> for Step<'a> {
         let captures = STEP_MATCHER.captures(input).unwrap();
 
         return Step::new(
-            captures.get(2).unwrap().as_str(),
-            captures.get(1).unwrap().as_str(),
+            captures.get(2).unwrap().as_str().chars().next().unwrap(),
+            captures.get(1).unwrap().as_str().chars().next().unwrap(),
         );
     }
 }
@@ -44,8 +44,8 @@ mod test {
         assert_eq!(
             step,
             Step {
-                target: "T",
-                dependency: "G"
+                target: 'T',
+                dependency: 'G'
             }
         );
     }

@@ -7,25 +7,26 @@ use std::collections::HashMap;
 
 use self::node::Node;
 use self::step::Step;
-pub struct Graph<'a> {
-  nodes: HashMap<&'a str, Node>,
+
+pub struct Graph {
+  nodes: HashMap<char, Node>,
 }
 
-impl<'a> Graph<'a> {
-  pub fn new() -> Graph<'a> {
+impl Graph {
+  pub fn new() -> Graph {
     Graph {
       nodes: HashMap::new(),
     }
   }
 
-  pub fn add_step(&mut self, step: Step<'a>) {
+  pub fn add_step(&mut self, step: Step) {
     let target = self.get_or_insert(step.target);
     let dependency = self.get_or_insert(step.dependency);
 
     target.add_dependency(dependency.clone());
   }
 
-  fn get_or_insert(&mut self, node_name: &'a str) -> Node {
+  fn get_or_insert(&mut self, node_name: char) -> Node {
     self
       .nodes
       .entry(node_name)
@@ -40,14 +41,14 @@ pub struct GraphIterator {
 }
 
 impl Iterator for GraphIterator {
-  type Item = String;
+  type Item = char;
 
-  fn next(&mut self) -> Option<String> {
+  fn next(&mut self) -> Option<char> {
     let next = self.find_suitable_candidate()?;
     self.candidates.remove(&next);
     self.dependencies_met.insert(next.clone());
 
-    return Some(String::from(next.name()));
+    return Some(next.name());
   }
 }
 
@@ -63,7 +64,7 @@ impl GraphIterator {
   }
 }
 
-impl<'a> From<&Graph<'a>> for GraphIterator {
+impl From<&Graph> for GraphIterator {
   fn from(graph: &Graph) -> GraphIterator {
     let candidates: BTreeSet<Node> = graph.nodes.iter().map(|(_, node)| node.clone()).collect();
 
@@ -87,32 +88,32 @@ mod test {
   fn test_walk() {
     let steps = vec![
       Step {
-        target: "A",
-        dependency: "C",
+        target: 'A',
+        dependency: 'C',
       },
       Step {
-        target: "F",
-        dependency: "C",
+        target: 'F',
+        dependency: 'C',
       },
       Step {
-        target: "B",
-        dependency: "A",
+        target: 'B',
+        dependency: 'A',
       },
       Step {
-        target: "D",
-        dependency: "A",
+        target: 'D',
+        dependency: 'A',
       },
       Step {
-        target: "E",
-        dependency: "B",
+        target: 'E',
+        dependency: 'B',
       },
       Step {
-        target: "E",
-        dependency: "D",
+        target: 'E',
+        dependency: 'D',
       },
       Step {
-        target: "E",
-        dependency: "F",
+        target: 'E',
+        dependency: 'F',
       },
     ];
 

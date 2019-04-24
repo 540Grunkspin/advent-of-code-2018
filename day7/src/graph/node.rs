@@ -8,7 +8,7 @@ type NodeRef = Rc<RefCell<_Node>>;
 
 #[derive(Debug)]
 struct _Node {
-  name: String,
+  name: char,
   dependencies: BTreeSet<NodeRef>,
 }
 
@@ -16,7 +16,7 @@ struct _Node {
 pub struct Node(NodeRef);
 
 impl Node {
-  fn new(name: String) -> Node {
+  fn new(name: char) -> Node {
     Node(
       Rc::new(
         RefCell::new(
@@ -29,8 +29,8 @@ impl Node {
       )
   }
 
-  pub fn name(&self) -> String {
-    self.0.borrow().name.clone()
+  pub fn name(&self) -> char {
+    self.0.borrow().name
   }
 
   pub fn are_dependencies_satisfied(&self, met_dependencies: &BTreeSet<Node>) -> bool {
@@ -64,9 +64,9 @@ impl PartialEq for _Node {
   }
 }
 
-impl From<&str> for Node {
-  fn from(name: &str) -> Node {
-    Node::new(String::from(name))
+impl From<char> for Node {
+  fn from(name: char) -> Node {
+    Node::new(name)
   }
 }
 
@@ -79,14 +79,14 @@ mod test {
 
   #[test]
   fn add_depdendency() {
-    let node = Node::from("A");
-    let dependency: Node = Node::from("A");
+    let node = Node::from('A');
+    let dependency: Node = Node::from('A');
 
     node.add_dependency(dependency.clone());
     let mut expected_dependencies = BTreeSet::new();
     expected_dependencies.insert(dependency);
 
-    assert_eq!(String::from("A"), node.name());
+    assert_eq!('A', node.name());
     assert!(node.are_dependencies_satisfied(&expected_dependencies))
   }
 }
