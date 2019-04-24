@@ -52,7 +52,7 @@ impl Iterator for GraphIterator {
 }
 
 impl GraphIterator {
-  fn find_suitable_candidate(&mut self) -> Option<Node> {
+  fn find_suitable_candidate(&self) -> Option<Node> {
     for candidate in self.candidates.iter() {
       if candidate.are_dependencies_satisfied(&self.dependencies_met) {
         return Some(candidate.clone());
