@@ -17,16 +17,10 @@ pub struct Node(NodeRef);
 
 impl Node {
   fn new(name: char) -> Node {
-    Node(
-      Rc::new(
-        RefCell::new(
-          _Node {
-            name: name,
-            dependencies: BTreeSet::new(),
-          }
-          )
-        )
-      )
+    Node(Rc::new(RefCell::new(_Node {
+      name: name,
+      dependencies: BTreeSet::new(),
+    })))
   }
 
   pub fn name(&self) -> char {
@@ -35,7 +29,11 @@ impl Node {
 
   pub fn are_dependencies_satisfied(&self, met_dependencies: &BTreeSet<Node>) -> bool {
     let met_node_refs = met_dependencies.iter().map(|node| node.clone().0);
-    self.0.borrow().dependencies.is_subset(&met_node_refs.collect())
+    self
+      .0
+      .borrow()
+      .dependencies
+      .is_subset(&met_node_refs.collect())
   }
 
   pub fn add_dependency(&self, dependency: Node) {
